@@ -1,7 +1,7 @@
-﻿using WinAuto;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Diagnostics;
 using System.Drawing;
+using WinAuto;
 
 namespace Tests
 {
@@ -95,7 +95,8 @@ namespace Tests
             }
             finally
             {
-                appProcess.Kill();
+                if (!appProcess.HasExited)
+                    appProcess.Kill();
             }
         }
     }
