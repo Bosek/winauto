@@ -8,6 +8,12 @@ All of this makes it ideal for macroing and automatization(games for example).
 - Image pattern searching(using template images) in screenshots(or other images)
 - Set and get Clipboard text
 - A few basic WinAPI methods to take a screenshot, focus window or block user input
+- With tests!
+
+## Install
+
+[NuGet](https://www.nuget.org/packages/winauto/):  
+`PM> Install-Package winauto`
 
 ## Third party tools
 WinAuto wraps [InputSimulator](https://github.com/michaelnoonan/inputsimulator) library. It is possible I will rewrite it once to add "native" support.
