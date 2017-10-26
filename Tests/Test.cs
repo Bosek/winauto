@@ -9,28 +9,42 @@ namespace Tests
     public class Test
     {
         [TestMethod]
+        public void ImageMatcherSimpleTest()
+        {
+            var imageMatcher = new ImageMatcher();
+            var gameScreen = Image.FromFile("gameScreen.png");
+            var spellNeedle = Image.FromFile("spellNeedle.png");
+
+            var found = imageMatcher.FindNeedle(gameScreen, spellNeedle);
+            Assert.AreNotEqual(found, null);
+
+            gameScreen.Dispose();
+            spellNeedle.Dispose();
+        }
+
+        [TestMethod]
         public void ImageMatcherThresholdTest()
         {
             var imageMatcher = new ImageMatcher();
             var starScreen = Image.FromFile("starScreen.png");
-            var starTemplate100 = Image.FromFile("starTemplate100.png");
-            var starTemplate75 = Image.FromFile("starTemplate75.png");
+            var starNeedle100 = Image.FromFile("starNeedle100.png");
+            var starNeedle75 = Image.FromFile("starNeedle75.png");
 
-            Assert.AreNotEqual(imageMatcher.FindTemplate(starScreen, starTemplate100), null);
+            Assert.AreNotEqual(imageMatcher.FindNeedle(starScreen, starNeedle100), null);
 
             imageMatcher.Threshold = 0.8f;
 
-            Assert.AreNotEqual(imageMatcher.FindTemplate(starScreen, starTemplate100), null);
-            Assert.AreEqual(imageMatcher.FindTemplate(starScreen, starTemplate75), null);
+            Assert.AreNotEqual(imageMatcher.FindNeedle(starScreen, starNeedle100), null);
+            Assert.AreEqual(imageMatcher.FindNeedle(starScreen, starNeedle75), null);
 
             imageMatcher.Threshold = 0.75f;
 
-            Assert.AreNotEqual(imageMatcher.FindTemplate(starScreen, starTemplate100), null);
-            Assert.AreNotEqual(imageMatcher.FindTemplate(starScreen, starTemplate75), null);
+            Assert.AreNotEqual(imageMatcher.FindNeedle(starScreen, starNeedle100), null);
+            Assert.AreNotEqual(imageMatcher.FindNeedle(starScreen, starNeedle75), null);
 
             starScreen.Dispose();
-            starTemplate100.Dispose();
-            starTemplate75.Dispose();
+            starNeedle100.Dispose();
+            starNeedle75.Dispose();
         }
 
         [TestMethod]
@@ -48,7 +62,6 @@ namespace Tests
 
             try
             {
-                //Initialize DDIY modules
                 var imageMatcher = new ImageMatcher();
 
                 //Try to find main window rectangle
@@ -59,23 +72,25 @@ namespace Tests
 
                 //Screenshot and load frame(with alpha channel) template
                 var screenshot = WinAPI.CaptureScreen();
-                var frameTemplate = Image.FromFile("frameTemplate.png");
+                var frameNeedle = Image.FromFile("frameNeedle.png");
 
                 //Try to find frame template on the screen
-                var found = imageMatcher.FindTemplate(screenshot, frameTemplate, appRectangle.Value);
+                var found = imageMatcher.FindNeedle(screenshot, frameNeedle, appRectangle.Value);
                 Assert.AreNotEqual(found, null);
                 if (found == null)
                     return;
 
                 //Image in the frame becomes our new template image
-                var templateImage = ImageMatcher.CropImage(screenshot, found.Value);
+                var needleImage = ImageMatcher.CropImage(screenshot, found.Value);
                 //Recalculate searching zone
                 var sceneRectangle = appRectangle.Value;
                 sceneRectangle.Y = found.Value.Y + found.Value.Height;
                 sceneRectangle.Height = appRectangle.Value.Height - (sceneRectangle.Y - appRectangle.Value.Y);
                 //Try to find image to click on
-                found = imageMatcher.FindTemplate(screenshot, templateImage, sceneRectangle);
+                found = imageMatcher.FindNeedle(screenshot, needleImage, sceneRectangle);
                 Assert.AreNotEqual(found, null);
+                if (found == null)
+                    return;
 
                 //Image found, click on it
                 Input.LeftMouseClick(found.Value.X + found.Value.Width / 2,
@@ -86,11 +101,11 @@ namespace Tests
                 //Take new screenshot
                 screenshot = WinAPI.CaptureScreen();
                 //If clicked on right image, scene should redraw and template won't be found
-                found = imageMatcher.FindTemplate(screenshot, templateImage, appRectangle.Value);
+                found = imageMatcher.FindNeedle(screenshot, needleImage, appRectangle.Value);
                 Assert.AreEqual(found, null);
 
-                frameTemplate.Dispose();
-                templateImage.Dispose();
+                frameNeedle.Dispose();
+                needleImage.Dispose();
                 screenshot.Dispose();
             }
             finally

@@ -55,20 +55,30 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="frameTemplate.png">
+    <Content Include="frameNeedle.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="spellNeedle.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="starScreen.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="starTemplate100.png">
+    <Content Include="starNeedle100.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="starTemplate75.png">
+    <Content Include="starNeedle75.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="gameScreen.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\TestGUIApp\TestGUIApp.csproj">
+      <Project>{ee815a92-dbef-4880-95db-16f2a41fff01}</Project>
+      <Name>TestGUIApp</Name>
+    </ProjectReference>
     <ProjectReference Include="..\WinAuto\WinAuto.csproj">
       <Project>{5983104e-f9bb-4a09-80c3-22d22c0b192f}</Project>
       <Name>WinAuto</Name>
