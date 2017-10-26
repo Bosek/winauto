@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestGUIApp", "TestGUIApp\Te
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinAuto", "WinAuto\WinAuto.csproj", "{5983104E-F9BB-4A09-80C3-22D22C0B192F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PerformanceTest", "PerformanceTest\PerformanceTest.csproj", "{6DE2B621-D604-4E8F-993C-558C312CCB9E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -31,6 +33,10 @@ Global
 		{5983104E-F9BB-4A09-80C3-22D22C0B192F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5983104E-F9BB-4A09-80C3-22D22C0B192F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5983104E-F9BB-4A09-80C3-22D22C0B192F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6DE2B621-D604-4E8F-993C-558C312CCB9E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6DE2B621-D604-4E8F-993C-558C312CCB9E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6DE2B621-D604-4E8F-993C-558C312CCB9E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6DE2B621-D604-4E8F-993C-558C312CCB9E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

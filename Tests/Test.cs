@@ -8,6 +8,8 @@ namespace Tests
     [TestClass]
     public class Test
     {
+        public TestContext TestContext { get; set; }
+
         [TestMethod]
         public void ImageMatcherSimpleTest()
         {
@@ -16,6 +18,10 @@ namespace Tests
             var spellNeedle = Image.FromFile("spellNeedle.png");
 
             var found = imageMatcher.FindNeedle(gameScreen, spellNeedle);
+
+            var seconds = imageMatcher.LastOperationTime.ToString("ss");
+            var miliseconds = imageMatcher.LastOperationTime.ToString("fff");
+            TestContext.WriteLine($"Operation time: {seconds}s {miliseconds}ms");
             Assert.AreNotEqual(found, null);
 
             gameScreen.Dispose();

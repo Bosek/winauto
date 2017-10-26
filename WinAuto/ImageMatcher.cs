@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.Drawing.Imaging;
 
 namespace WinAuto
 {
@@ -8,7 +9,7 @@ namespace WinAuto
     /// </summary>
     public class ImageMatcher
     {
-        public bool WatchTime { set; get; } = false;
+        public TimeSpan LastOperationTime { private set; get; }
 
         /// <summary>
         /// Possible color threshold. Lower value means ImageMatcher can find even not 100% matching images, but it can be slower.
@@ -52,8 +53,16 @@ namespace WinAuto
         }
         static Rectangle? matchBitmaps(Bitmap haystack, Bitmap needle, Rectangle searchZone, float threshold)
         {
-            var maybeFound = false;
+            Rectangle? found = null;
 
+            var maybeFound = false;
+            var haystackImageData = new ImageData(haystack);
+            var needleImageData = new ImageData(needle);
+
+            haystackImageData.Lock();
+            needleImageData.Lock();
+
+            // Make sure we are not searching in zone out of haystack boundaries
             if (searchZone.X + searchZone.Width > haystack.Width)
                 searchZone.Width = Math.Abs(searchZone.X - haystack.Width);
             if (searchZone.Y + searchZone.Height > haystack.Height)
@@ -67,8 +76,8 @@ namespace WinAuto
                     {
                         for (int tX = 0; tX < needle.Width; tX++)
                         {
-                            var tPixel = needle.GetPixel(tX, tY);
-                            var sPixel = haystack.GetPixel(sX + tX, sY + tY);
+                            var tPixel = needleImageData.GetPixel(tX, tY);
+                            var sPixel = haystackImageData.GetPixel(sX + tX, sY + tY);
 
                             maybeFound = compareColors(tPixel, sPixel, threshold);
 
@@ -79,10 +88,19 @@ namespace WinAuto
                             break;
                     }
                     if (maybeFound)
-                        return new Rectangle(sX, sY, needle.Width, needle.Height);
+                    {
+                        found = new Rectangle(sX, sY, needle.Width, needle.Height);
+                        break;
+                    }
                 }
+                if (maybeFound)
+                    break;
             }
-            return null;
+
+            haystackImageData.Unlock();
+            needleImageData.Unlock();
+
+            return found;
         }
 
         [Obsolete]
@@ -133,18 +151,15 @@ namespace WinAuto
         /// </returns>
         public Rectangle? FindNeedle(Image haystack, Image needle, Rectangle sourceRect)
         {
-            var startTime = DateTime.Now;
-
             Rectangle? rectangle;
             using (var screenBitmap = new Bitmap(haystack))
             using (var needleBitmap = new Bitmap(needle))
             {
+                var startTime = DateTime.Now;
                 rectangle = matchBitmaps(screenBitmap, needleBitmap, sourceRect, Threshold);
+                var endTime = DateTime.Now;
+                LastOperationTime = (endTime - startTime);
             }
-
-            var endTime = DateTime.Now;
-            if (WatchTime)
-                Console.WriteLine($"{nameof(FindNeedle)} method took {(endTime-startTime).Milliseconds}ms");
 
             return rectangle;
         }
