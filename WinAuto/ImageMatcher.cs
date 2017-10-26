@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Drawing;
-using System.Drawing.Imaging;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace WinAuto
 {
@@ -10,6 +12,7 @@ namespace WinAuto
     public class ImageMatcher
     {
         public TimeSpan LastOperationTime { private set; get; }
+        public int ThreadCount { set; get; } = Environment.ProcessorCount;
 
         /// <summary>
         /// Possible color threshold. Lower value means ImageMatcher can find even not 100% matching images, but it can be slower.
@@ -51,30 +54,44 @@ namespace WinAuto
                 compareColorChannel(templateColor.B, sourceColor.B, threshold)
                 );
         }
-        static Rectangle? matchBitmaps(Bitmap haystack, Bitmap needle, Rectangle searchZone, float threshold)
+
+        static Queue<Rectangle> prepareWorkQueue(Size haystackSize, Size needleSize, Rectangle searchZone)
+        {
+            // Make sure we are not searching in zone out of haystack boundaries
+            if (searchZone.X + searchZone.Width > haystackSize.Width)
+                searchZone.Width = Math.Abs(searchZone.X - haystackSize.Width);
+            if (searchZone.Y + searchZone.Height > haystackSize.Height)
+                searchZone.Height = Math.Abs(searchZone.Y - haystackSize.Height);
+
+            var workQueue = new Queue<Rectangle>();
+
+            for (int y = searchZone.Y; y < Math.Floor((decimal)(searchZone.Height / needleSize.Height)); y++)
+            {
+                for (int x = searchZone.X; x < Math.Floor((decimal)(searchZone.Width / needleSize.Width)); x++)
+                {
+                    if (x * needleSize.Width + 2 * needleSize.Width > haystackSize.Width)
+                        continue;
+                    if (y * needleSize.Height + 2 * needleSize.Height > haystackSize.Height)
+                        continue;
+                    workQueue.Enqueue(new Rectangle(x * needleSize.Width, y * needleSize.Height, needleSize.Width, needleSize.Height));
+                }
+            }
+            return workQueue;
+        }
+
+        Rectangle? searchNeedle(ImageData haystackImageData, ImageData needleImageData, Rectangle searchZone, float threshold)
         {
             Rectangle? found = null;
 
             var maybeFound = false;
-            var haystackImageData = new ImageData(haystack);
-            var needleImageData = new ImageData(needle);
 
-            haystackImageData.Lock();
-            needleImageData.Lock();
-
-            // Make sure we are not searching in zone out of haystack boundaries
-            if (searchZone.X + searchZone.Width > haystack.Width)
-                searchZone.Width = Math.Abs(searchZone.X - haystack.Width);
-            if (searchZone.Y + searchZone.Height > haystack.Height)
-                searchZone.Height = Math.Abs(searchZone.Y - haystack.Height);
-
-            for (int sY = searchZone.Y; sY < searchZone.Y + searchZone.Height - needle.Height - 1; sY++)
+            for (int sY = searchZone.Y; sY < searchZone.Y + searchZone.Height; sY++)
             {
-                for (int sX = searchZone.X; sX < searchZone.X + searchZone.Width - needle.Width - 1; sX++)
+                for (int sX = searchZone.X; sX < searchZone.X + searchZone.Width; sX++)
                 {
-                    for (int tY = 0; tY < needle.Height; tY++)
+                    for (int tY = 0; tY < searchZone.Height; tY++)
                     {
-                        for (int tX = 0; tX < needle.Width; tX++)
+                        for (int tX = 0; tX < searchZone.Width; tX++)
                         {
                             var tPixel = needleImageData.GetPixel(tX, tY);
                             var sPixel = haystackImageData.GetPixel(sX + tX, sY + tY);
@@ -89,12 +106,57 @@ namespace WinAuto
                     }
                     if (maybeFound)
                     {
-                        found = new Rectangle(sX, sY, needle.Width, needle.Height);
+                        found = new Rectangle(sX, sY, searchZone.Width, searchZone.Height);
                         break;
                     }
                 }
                 if (maybeFound)
                     break;
+            }
+            return found;
+        }
+
+        Rectangle? workThread(Queue<Rectangle> workQueue, ImageData haystackImageData, ImageData needleImageData, float threshold)
+        {
+            while (workQueue.Count > 0)
+            {
+                var taskZone = workQueue.Dequeue();
+
+                var result = searchNeedle(haystackImageData, needleImageData, taskZone, threshold);
+                if (result.HasValue)
+                {
+                    workQueue.Clear();
+                    return result.Value;
+                }
+            }
+            return null;
+        }
+
+        Rectangle? matchBitmaps(Bitmap haystack, Bitmap needle, Rectangle searchZone, float threshold)
+        {
+            Rectangle? found = null;
+
+            var haystackImageData = new ImageData(haystack);
+            var needleImageData = new ImageData(needle);
+
+            var workQueue = prepareWorkQueue(haystack.Size, needle.Size, searchZone);
+            var taskList = new List<Task<Rectangle?>>();
+            for (int t = 0; t < ThreadCount; t++)
+            {
+                taskList.Add(new Task<Rectangle?>(delegate() { return workThread(workQueue, haystackImageData, needleImageData, threshold); }));
+            }
+
+            haystackImageData.Lock();
+            needleImageData.Lock();
+
+            taskList.ForEach(task => task.Start());
+            Task.WaitAll(taskList.ToArray());
+
+            foreach(var task in taskList)
+            {
+                var result = task.Result;
+                if (result.HasValue)
+                    found = result.Value;
             }
 
             haystackImageData.Unlock();

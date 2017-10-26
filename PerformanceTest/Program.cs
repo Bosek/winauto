@@ -8,6 +8,7 @@ namespace PerformanceTest
     {
         // Before LockBits it took about 3s 500ms
         // After LockBits it took about 1s 600ms
+        // Multithreading FTW. It takes about 130ms now!
         static void Main(string[] args)
         {
             while (true)
@@ -20,7 +21,7 @@ namespace PerformanceTest
 
                 var seconds = imageMatcher.LastOperationTime.ToString("ss");
                 var miliseconds = imageMatcher.LastOperationTime.ToString("fff");
-                Console.WriteLine($"{(found.HasValue ? "Found" : "Not found")} in {seconds}s {miliseconds}ms");
+                Console.WriteLine($"{(found.HasValue ? "Found" : "Not found")} in {seconds}s {miliseconds}ms {(found.HasValue ? $"on position {found.Value.ToString()}" : "")}");
 
                 gameScreen.Dispose();
                 spellNeedle.Dispose();
