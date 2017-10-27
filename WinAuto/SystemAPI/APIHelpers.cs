@@ -25,6 +25,9 @@ namespace WinAuto.APIHelpers
         internal static extern bool GetWindowRect(IntPtr hWnd, out RECT rect);
         [DllImport("user32.dll")]
         internal static extern bool SetForegroundWindow(IntPtr hWnd);
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool PrintWindow(IntPtr hwnd, IntPtr hDC, uint nFlags);
     }
     class GDI32
     {

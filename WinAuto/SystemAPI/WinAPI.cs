@@ -81,7 +81,61 @@ namespace WinAuto
         }
 
         /// <summary>
-        /// Finds main window of the process and focuses it. 
+        /// Captures MAIN window of the process regardless of it's position on the screen or transparency
+        /// </summary>
+        /// <param name="process">Process</param>
+        /// <returns>MAIN window bitmap or null</returns>
+        public static Bitmap CaptureWindow(Process process)
+        {
+            var windowRect = GetWindowRectangle(process);
+            if (!windowRect.HasValue)
+                return null;
+
+            var screenBitmap = new Bitmap(windowRect.Value.Width, windowRect.Value.Height);
+            var success = false;
+            using (var graphics = Graphics.FromImage(screenBitmap))
+            {
+                var devicehandle = graphics.GetHdc();
+
+                success = User32.PrintWindow(process.MainWindowHandle, devicehandle, 0);
+
+                graphics.ReleaseHdc(devicehandle);
+            }
+
+            if (success)
+            {
+                return screenBitmap;
+            }
+            else
+            {
+                return null;
+            }
+        }
+        /// <summary>
+        /// Captures MAIN window of the process regardless of it's position on the screen or transparency
+        /// </summary>
+        /// <param name="pid">Process ID</param>
+        /// <returns>MAIN window bitmap or null</returns>
+        public static Bitmap CaptureWindow(int pid)
+        {
+            return CaptureWindow(Process.GetProcessById(pid));
+        }
+        /// <summary>
+        /// Captures MAIN window of the process regardless of it's position on the screen or transparency
+        /// </summary>
+        /// <param name="name">Process name. Usually filename without .exe extension. First one found will be used.</param>
+        /// <returns>MAIN window bitmap or null</returns>
+        public static Bitmap GetWindowScreen(string name)
+        {
+            var processList = Process.GetProcessesByName(name);
+
+            if (processList.Length > 0)
+                return CaptureWindow(processList[0]);
+            return null;
+        }
+
+        /// <summary>
+        /// Finds MAIN window of the process and focuses it. 
         /// </summary>
         /// <param name="process">Process</param>
         public static void FocusWindow(Process process)

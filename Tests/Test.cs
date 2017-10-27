@@ -17,12 +17,12 @@ namespace Tests
             var gameScreen = Image.FromFile("gameScreen.png");
             var spellNeedle = Image.FromFile("spellNeedle.png");
 
-            var found = imageMatcher.FindNeedle(gameScreen, spellNeedle);
+            var result = imageMatcher.FindNeedle(gameScreen, spellNeedle);
 
             var seconds = imageMatcher.LastOperationTime.ToString("ss");
             var miliseconds = imageMatcher.LastOperationTime.ToString("fff");
             TestContext.WriteLine($"Operation time: {seconds}s {miliseconds}ms");
-            Assert.AreNotEqual(found, null);
+            Assert.AreNotEqual(result, null);
 
             gameScreen.Dispose();
             spellNeedle.Dispose();
@@ -70,45 +70,33 @@ namespace Tests
             {
                 var imageMatcher = new ImageMatcher();
 
-                //Try to find main window rectangle
-                var appRectangle = WinAPI.GetWindowRectangle(appProcess);
-                Assert.AreNotEqual(appRectangle, null);
-                if (appRectangle == null)
-                    return;
-
-                //Screenshot and load frame(with alpha channel) template
-                var screenshot = WinAPI.CaptureScreen();
+                //Screenshot and load frame(with alpha channel) needle image
+                var screenshot = WinAPI.CaptureWindow(appProcess);
                 var frameNeedle = Image.FromFile("frameNeedle.png");
 
                 //Try to find frame template on the screen
-                var found = imageMatcher.FindNeedle(screenshot, frameNeedle, appRectangle.Value);
-                Assert.AreNotEqual(found, null);
-                if (found == null)
-                    return;
+                var result = imageMatcher.FindNeedle(screenshot, frameNeedle);
+                Assert.AreNotEqual(result.HasValue, false);
 
                 //Image in the frame becomes our new template image
-                var needleImage = ImageMatcher.CropImage(screenshot, found.Value);
+                var needleImage = ImageMatcher.CropImage(screenshot, result.Value);
                 //Recalculate searching zone
-                var sceneRectangle = appRectangle.Value;
-                sceneRectangle.Y = found.Value.Y + found.Value.Height;
-                sceneRectangle.Height = appRectangle.Value.Height - (sceneRectangle.Y - appRectangle.Value.Y);
+                var sceneRectangle = new Rectangle(0, result.Value.Y + result.Value.Height, screenshot.Width, screenshot.Height - (result.Value.Y + result.Value.Height));
                 //Try to find image to click on
-                found = imageMatcher.FindNeedle(screenshot, needleImage, sceneRectangle);
-                Assert.AreNotEqual(found, null);
-                if (found == null)
-                    return;
+                result = imageMatcher.FindNeedle(screenshot, needleImage, sceneRectangle);
+                Assert.AreNotEqual(result.HasValue, false);
 
                 //Image found, click on it
-                Input.LeftMouseClick(found.Value.X + found.Value.Width / 2,
-                    found.Value.Y + found.Value.Height / 2);
+                Input.LeftMouseClick(result.Value.X + result.Value.Width / 2,
+                    result.Value.Y + result.Value.Height / 2);
 
                 //Wait some time to redraw scene
                 Input.MakeDelay(1000);
                 //Take new screenshot
-                screenshot = WinAPI.CaptureScreen();
+                screenshot = WinAPI.CaptureWindow(appProcess);
                 //If clicked on right image, scene should redraw and template won't be found
-                found = imageMatcher.FindNeedle(screenshot, needleImage, appRectangle.Value);
-                Assert.AreEqual(found, null);
+                result = imageMatcher.FindNeedle(screenshot, needleImage);
+                Assert.AreEqual(result.HasValue, false);
 
                 frameNeedle.Dispose();
                 needleImage.Dispose();

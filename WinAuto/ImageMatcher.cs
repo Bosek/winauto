@@ -1,11 +1,16 @@
 ﻿using System;
 using System.Drawing;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace WinAuto
 {
+    struct WorkThreadData
+    {
+        public ImageData HaystackImageData;
+        public ImageData NeedleImageData;
+        public float Threshold;
+    }
     /// <summary>
     /// Per pixel image matching.
     /// </summary>
@@ -20,12 +25,6 @@ namespace WinAuto
         /// </summary>
         public float Threshold { set; get; } = 1;
 
-        static Bitmap applyFilters(Bitmap bitmap)
-        {
-            var filter = new GrayScale();
-
-            return filter.Apply(bitmap);
-        }
         static bool compareColorChannel(byte channel1, byte channel2, float threshold)
         {
             threshold = Math.Min(threshold, 1f);
@@ -79,11 +78,14 @@ namespace WinAuto
             return workQueue;
         }
 
-        Rectangle? searchNeedle(ImageData haystackImageData, ImageData needleImageData, Rectangle searchZone, float threshold)
+        Rectangle? searchNeedle(WorkThreadData workThreadData, Rectangle searchZone)
         {
-            Rectangle? found = null;
+            var haystackImageData = workThreadData.HaystackImageData;
+            var needleImageData = workThreadData.NeedleImageData;
+            var threshold = workThreadData.Threshold;
 
-            var maybeFound = false;
+            var resultFound = false;
+            Rectangle? result = null;
 
             for (int sY = searchZone.Y; sY < searchZone.Y + searchZone.Height; sY++)
             {
@@ -96,39 +98,43 @@ namespace WinAuto
                             var tPixel = needleImageData.GetPixel(tX, tY);
                             var sPixel = haystackImageData.GetPixel(sX + tX, sY + tY);
 
-                            maybeFound = compareColors(tPixel, sPixel, threshold);
+                            resultFound = compareColors(tPixel, sPixel, threshold);
 
-                            if (!maybeFound)
+                            if (!resultFound)
                                 break;
                         }
-                        if (!maybeFound)
+                        if (!resultFound)
                             break;
                     }
-                    if (maybeFound)
+                    if (resultFound)
                     {
-                        found = new Rectangle(sX, sY, searchZone.Width, searchZone.Height);
+                        result = new Rectangle(sX, sY, searchZone.Width, searchZone.Height);
                         break;
                     }
                 }
-                if (maybeFound)
+                if (resultFound)
                     break;
             }
-            return found;
+            return result;
         }
 
-        Rectangle? workThread(Queue<Rectangle> workQueue, ImageData haystackImageData, ImageData needleImageData, float threshold)
+        Rectangle? workThread(WorkThreadData workThreadData, Queue<Rectangle> workQueue)
         {
-            while (workQueue.Count > 0)
+            try
             {
-                var taskZone = workQueue.Dequeue();
-
-                var result = searchNeedle(haystackImageData, needleImageData, taskZone, threshold);
-                if (result.HasValue)
+                while (workQueue.Count > 0)
                 {
-                    workQueue.Clear();
-                    return result.Value;
+                    var taskZone = workQueue.Dequeue();
+
+                    var result = searchNeedle(workThreadData, taskZone);
+                    if (result.HasValue)
+                    {
+                        workQueue.Clear();
+                        return result.Value;
+                    }
                 }
             }
+            catch (Exception) { }
             return null;
         }
 
@@ -141,9 +147,15 @@ namespace WinAuto
 
             var workQueue = prepareWorkQueue(haystack.Size, needle.Size, searchZone);
             var taskList = new List<Task<Rectangle?>>();
+            var workThreadData = new WorkThreadData
+            {
+                HaystackImageData = haystackImageData,
+                NeedleImageData = needleImageData,
+                Threshold = threshold
+            };
             for (int t = 0; t < ThreadCount; t++)
             {
-                taskList.Add(new Task<Rectangle?>(delegate() { return workThread(workQueue, haystackImageData, needleImageData, threshold); }));
+                taskList.Add(new Task<Rectangle?>(delegate() { return workThread(workThreadData, workQueue); }));
             }
 
             haystackImageData.Lock();
@@ -181,8 +193,8 @@ namespace WinAuto
         /// Tries to match needle image with source image. Per pixel searching, no magic.
         /// Regardless of this approach, algorithm seems to be pretty fast for simple automatization purposes.
         /// If you want to speed matching as much as possible, try to look inside smaller areas
-        /// and try to experiment with your needle images. More unique
-        /// it is, more speed you can get.
+        /// and try to experiment with your needle images. More unique set of pixels
+        /// it is, faster search you can get.
         /// </summary>
         /// <param name="haystack">Source image(eg. screenshot)</param>
         /// <param name="needle">Image to look for</param>
