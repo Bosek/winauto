@@ -63,16 +63,21 @@ namespace WinAuto
                 searchZone.Height = Math.Abs(searchZone.Y - haystackSize.Height);
 
             var workQueue = new Queue<Rectangle>();
+            var blockWidth = needleSize.Width;
+            var blockHeight = needleSize.Height;
 
-            for (int y = searchZone.Y; y < Math.Floor((decimal)(searchZone.Height / needleSize.Height)); y++)
+            for (int y = searchZone.Y / blockHeight; y < Math.Floor((decimal)(searchZone.Height / needleSize.Height)); y++)
             {
-                for (int x = searchZone.X; x < Math.Floor((decimal)(searchZone.Width / needleSize.Width)); x++)
+                for (int x = searchZone.X / blockWidth; x < Math.Floor((decimal)(searchZone.Width / needleSize.Width)); x++)
                 {
+                    var workWidth = blockWidth;
+                    var workHeight = blockHeight;
+
                     if (x * needleSize.Width + 2 * needleSize.Width > haystackSize.Width)
-                        continue;
+                        workWidth = (searchZone.Width - (x * needleSize.Width)) - needleSize.Width;
                     if (y * needleSize.Height + 2 * needleSize.Height > haystackSize.Height)
-                        continue;
-                    workQueue.Enqueue(new Rectangle(x * needleSize.Width, y * needleSize.Height, needleSize.Width, needleSize.Height));
+                        workHeight = (searchZone.Height - (y * needleSize.Height)) - needleSize.Height;
+                    workQueue.Enqueue(new Rectangle(x * needleSize.Width, y * needleSize.Height, workWidth, workHeight));
                 }
             }
             return workQueue;
@@ -85,7 +90,6 @@ namespace WinAuto
             var threshold = workThreadData.Threshold;
 
             var resultFound = false;
-            Rectangle? result = null;
 
             for (int sY = searchZone.Y; sY < searchZone.Y + searchZone.Height; sY++)
             {
@@ -107,15 +111,10 @@ namespace WinAuto
                             break;
                     }
                     if (resultFound)
-                    {
-                        result = new Rectangle(sX, sY, searchZone.Width, searchZone.Height);
-                        break;
-                    }
+                        return new Rectangle(sX, sY, needleImageData.Bitmap.Width, needleImageData.Bitmap.Height);
                 }
-                if (resultFound)
-                    break;
             }
-            return result;
+            return null;
         }
 
         Rectangle? workThread(WorkThreadData workThreadData, Queue<Rectangle> workQueue)
@@ -226,11 +225,11 @@ namespace WinAuto
         public Rectangle? FindNeedle(Image haystack, Image needle, Rectangle sourceRect)
         {
             Rectangle? rectangle;
-            using (var screenBitmap = new Bitmap(haystack))
+            using (var haystackBitmap = new Bitmap(haystack))
             using (var needleBitmap = new Bitmap(needle))
             {
                 var startTime = DateTime.Now;
-                rectangle = matchBitmaps(screenBitmap, needleBitmap, sourceRect, Threshold);
+                rectangle = matchBitmaps(haystackBitmap, needleBitmap, sourceRect, Threshold);
                 var endTime = DateTime.Now;
                 LastOperationTime = (endTime - startTime);
             }

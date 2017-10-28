@@ -52,7 +52,6 @@ namespace TestGUIApp
             }
             graphics.Dispose();
 
-            //Give some time to Random to get a new number
             Thread.Sleep(15);
             return (Image)bitmap;
         }

@@ -180,6 +180,7 @@
             this.Name = "MainForm";
             this.ShowIcon = false;
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "TestGUIApp";
             this.TopMost = true;
             ((System.ComponentModel.ISupportInitialize)(this.templateBox)).EndInit();

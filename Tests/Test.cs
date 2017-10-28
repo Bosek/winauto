@@ -70,25 +70,28 @@ namespace Tests
             {
                 var imageMatcher = new ImageMatcher();
 
-                //Screenshot and load frame(with alpha channel) needle image
+                var windowPosition = WinAPI.GetWindowRectangle(appProcess);
+
+                //Capture screenshot and load frame(with alpha channel) needle image
                 var screenshot = WinAPI.CaptureWindow(appProcess);
                 var frameNeedle = Image.FromFile("frameNeedle.png");
 
                 //Try to find frame template on the screen
-                var result = imageMatcher.FindNeedle(screenshot, frameNeedle);
+                var result = imageMatcher.FindNeedle(screenshot, frameNeedle, new Rectangle(0, 0, screenshot.Width, screenshot.Height / 3));
                 Assert.AreNotEqual(result.HasValue, false);
 
                 //Image in the frame becomes our new template image
                 var needleImage = ImageMatcher.CropImage(screenshot, result.Value);
                 //Recalculate searching zone
                 var sceneRectangle = new Rectangle(0, result.Value.Y + result.Value.Height, screenshot.Width, screenshot.Height - (result.Value.Y + result.Value.Height));
-                //Try to find image to click on
+
+                //Try to find an image to click on
                 result = imageMatcher.FindNeedle(screenshot, needleImage, sceneRectangle);
                 Assert.AreNotEqual(result.HasValue, false);
 
                 //Image found, click on it
-                Input.LeftMouseClick(result.Value.X + result.Value.Width / 2,
-                    result.Value.Y + result.Value.Height / 2);
+                Input.LeftMouseClick(windowPosition.Value.X + result.Value.X + result.Value.Width / 2,
+                    windowPosition.Value.Y + result.Value.Y + result.Value.Height / 2);
 
                 //Wait some time to redraw scene
                 Input.MakeDelay(1000);
