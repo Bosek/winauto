@@ -1,19 +1,18 @@
 # WinAuto
-WinAuto is small C# library for simulating basic **user input**(mouse and keyboard), **image pattern searching**, **clipboard handling** and some **basic API functions**. 
+WinAuto is small C# library for simulating basic **user input**(mouse and keyboard), **image needle-in-haystack search**, **clipboard handling** and some **basic system API functions**. 
   
 All of this makes it ideal for macroing and automatization(games for example).
 
 ## Features
-- Simulate keyboard and Mouse input
-- Image pattern searching(using template images) in screenshots(or other images)
+- Simulate keyboard and mouse input
+- Image pattern searching(using needle images) on images(screenshots etc)
 - Set and get Clipboard text
 - A few basic WinAPI methods to take a screenshot, focus window or block user input
-- With tests!
+- Basic tests to show functionality
 
-## Install
-
-[NuGet](https://www.nuget.org/packages/winauto/):  
-`PM> Install-Package winauto`
+## Performance
+Image search is multithreaded, which makes it pretty fast. For example, finding spell icon(44x45px) on some random WoW screenshot(1920x1080) takes around 130ms on my I5-7300HQ(4 cores).
+It certainly can't handle these things in realtime, but it's still significantly faster than previous versions(could take up to 3 seconds, hehe).
 
 ## Third party tools
 WinAuto wraps [InputSimulator](https://github.com/michaelnoonan/inputsimulator) library. It is possible I will rewrite it once to add "native" support.
@@ -24,7 +23,7 @@ See tests and in-code XML docs. It is really simple to learn and use.
 ## Licence
 The MIT License (MIT)
 
-Copyright (c) 2016 Tomas Bosek bosektom@gmail.com
+Copyright (c) 2016-2017 Tomas Bosek bosektom@gmail.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
