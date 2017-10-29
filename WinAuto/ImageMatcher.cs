@@ -119,21 +119,24 @@ namespace WinAuto
 
         Rectangle? workThread(WorkThreadData workThreadData, Queue<Rectangle> workQueue)
         {
-            try
+            while (true)
             {
-                while (workQueue.Count > 0)
+                Rectangle taskZone;
+                lock (workQueue)
                 {
-                    var taskZone = workQueue.Dequeue();
+                    if (workQueue.Count > 0)
+                        taskZone = workQueue.Dequeue();
+                    else
+                        break;
+                }
 
-                    var result = searchNeedle(workThreadData, taskZone);
-                    if (result.HasValue)
-                    {
-                        workQueue.Clear();
-                        return result.Value;
-                    }
+                var result = searchNeedle(workThreadData, taskZone);
+                if (result.HasValue)
+                {
+                    workQueue.Clear();
+                    return result.Value;
                 }
             }
-            catch (Exception) { }
             return null;
         }
 
