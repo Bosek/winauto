@@ -4,7 +4,7 @@ using System.Drawing.Imaging;
 namespace WinAuto
 {
     /// <summary>
-    /// Image filter class.
+    /// Image base filter class.
     /// </summary>
     public abstract class Filter
     {
@@ -13,13 +13,8 @@ namespace WinAuto
     /// <summary>
     /// Simple gray scale filter.
     /// </summary>
-    public class GrayScale : Filter
+    public class GrayScaleFilter : Filter
     {
-        /// <summary>
-        /// Applies filter to the Image
-        /// </summary>
-        /// <param name="original">Image to be processed</param>
-        /// <returns>Processed image</returns>
         public override Bitmap Apply(Bitmap original)
         {
             var newBitmap = new Bitmap(original.Width, original.Height);
@@ -28,11 +23,41 @@ namespace WinAuto
             var colorMatrix = new ColorMatrix(
                new float[][]
                 {
-                    new float[] {.3f, .3f, .3f, 0, 0},
-                    new float[] {.59f, .59f, .59f, 0, 0},
-                    new float[] {.11f, .11f, .11f, 0, 0},
-                    new float[] {0, 0, 0, 1, 0},
-                    new float[] {0, 0, 0, 0, 1}
+                    new float[] { .3f,  .3f,  .3f, 0f, 0f},
+                    new float[] {.59f, .59f, .59f, 0f, 0f},
+                    new float[] {.11f, .11f, .11f, 0f, 0f},
+                    new float[] {  0f,   0f,   0f, 1f, 0f},
+                    new float[] {  0f,   0f,   0f, 0f, 1f}
+            });
+
+            var attributes = new ImageAttributes();
+            attributes.SetColorMatrix(colorMatrix);
+            g.DrawImage(original, new Rectangle(0, 0, original.Width, original.Height),
+               0, 0, original.Width, original.Height, GraphicsUnit.Pixel, attributes);
+
+            g.Dispose();
+            return newBitmap;
+        }
+    }
+
+    /// <summary>
+    /// Image inversion filter.
+    /// </summary>
+    public class InvertedColorsFilter : Filter
+    {
+        public override Bitmap Apply(Bitmap original)
+        {
+            var newBitmap = new Bitmap(original.Width, original.Height);
+
+            var g = Graphics.FromImage(newBitmap);
+            var colorMatrix = new ColorMatrix(
+               new float[][]
+                {
+                    new float[] { -1f,   0f,   0f, 0f, 0f},
+                    new float[] {  0f,  -1f,   0f, 0f, 0f},
+                    new float[] {  0f,   0f,  -1f, 0f, 0f},
+                    new float[] {  0f,   0f,   0f, 1f, 0f},
+                    new float[] {  1f,   1f,   1f, 0f, 1f}
             });
 
             var attributes = new ImageAttributes();
