@@ -14,6 +14,8 @@ All of this makes it ideal for macroing and automatization(games for example).
 Image search is multithreaded, which makes it pretty fast. For example, finding spell icon(44x45px) on some random WoW screenshot(1920x1080) takes around 130ms on my I5-7300HQ(4 cores).
 It certainly can't handle these things in realtime, but it's still significantly faster than previous versions(could take up to 3 seconds, hehe).
 
+EDIT: Takes about 50ms on 3700X(8 cores, 16 threads)
+
 ## Third party tools
 WinAuto wraps [InputSimulator](https://github.com/michaelnoonan/inputsimulator) library. It is possible I will rewrite it once to add "native" support.
 
